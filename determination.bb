@@ -19,6 +19,9 @@ Global enemyImage = LoadImage("enemy.bmp")
 Global damageSound = LoadSound("damage.wav")
 Global playerShoot = LoadSound("playershoot.wav")
 Global enemyShoot = LoadSound("enemyshoot.wav")
+Global asteroidExplosion = LoadSound("asteroidExplosion.wav")
+
+Global soundOff = False 
 
 ;establish our constants for controls
 Const ESCKEY = 1, UPKEY = 200, LEFTKEY = 203, RIGHTKEY = 205, DOWNKEY = 208, SPACEBAR = 57
@@ -34,6 +37,7 @@ End Type
 Type bullet 
 	Field x,y,dy
 	Field image
+	Field invis
 End Type 
 
 Type enemyBullet
@@ -60,6 +64,7 @@ player\x = 600
 player\y = 670
 player\isDead = False
 player\image = playerImage
+player\health = 100
 
 ; Make our first enemy
 Global enemy.Enemy = New Enemy 
@@ -92,6 +97,7 @@ While KeyDown(1)=0
 	updateBackground() ; Parallax stuff
 	Text 200,700,"Time Elapsed: " + Str((MilliSecs() - timer) / 1000)
 	Text 400,700,"Enemy Count: " + Str(enemyCount)
+	Text 600,700,"Player Health: " + Str(player\health)
 	updateEnemy() ; Enemy movement and shooting
 	updatePlayer() ; Player movement (keyboard) and shooting
 	updateBullets() ; Check bullet collisions and movement
@@ -146,6 +152,15 @@ Function updatePlayer()
 		enemy\bulletTimer = MilliSecs()
 		enemyCount = enemyCount + 1 
 	EndIf 
+	
+	If KeyHit(25) ; turn sound off/on
+		If soundOff
+			ResumeChannel music 
+		Else
+			PauseChannel music
+		EndIf 
+		soundOff = Not soundOff
+	EndIf 
 		
 End Function 
 
@@ -155,7 +170,7 @@ Function updateBullets()
 		bullet\y = bullet\y + bullet\dy ; move it!
 		If(bullet\y <= 0) Then ; Delete if out of bounds 
 			Delete bullet
-		Else
+		Else If Not bullet\invis
 			For enemy.enemy = Each enemy ; Check for collisions with enemies
 				If ImagesOverlap(bullet\image,bullet\x,bullet\y,enemy\image,enemy\x,enemy\y)
 					Delete enemy
@@ -167,11 +182,10 @@ Function updateBullets()
 				If ImagesOverlap(bullet\image,bullet\x,bullet\y,asteroid\image,asteroid\x,asteroid\y)
 					If(Not asteroid\isSmall) Then
 						spawnSmallAsteroids(asteroid\x,asteroid\y)
-						spawnSmallAsteroids(asteroid\x,asteroid\y)
-						spawnSmallAsteroids(asteroid\x,asteroid\y)
-						spawnSmallAsteroids(asteroid\x,asteroid\y)
 					EndIf 
 					Delete asteroid
+					PlaySound asteroidExplosion
+					bullet\invis = True  
 				EndIf 
 			Next
 		EndIf 
@@ -214,24 +228,27 @@ Function updateEnemy()
 End Function 
 
 Function spawnSmallAsteroids(x,y)
-	asteroid1.asteroid = New asteroid
-	asteroid1\x = x
-	asteroid1\y = y
-	asteroid1\dx = Rand(-10,10)
-	asteroid1\dy = Rand(-10,10)
-	asteroid1\image = asteroidSmallImage
-	asteroid1\isSmall = True 
+	amount = Rand(2,6)
+	For i = 0 To amount
+		asteroid1.asteroid = New asteroid
+		asteroid1\x = x
+		asteroid1\y = y
+		asteroid1\dx = Rand(-10,10)
+		asteroid1\dy = Rand(-10,10)
+		asteroid1\image = asteroidSmallImage
+		asteroid1\isSmall = True 
+	Next
 End Function
 	
 
 Function updateAsteroids()
-	If MilliSecs() - astTimer >= 5000 Then
+	If MilliSecs() - astTimer >= 2000 Then
 		astTimer = MilliSecs()
 		newAsteroid.asteroid = New Asteroid
 		newAsteroid\x = Rand(0,1230)
 		newAsteroid\y = 0
-		newAsteroid\dx = Rand(-10,10)
-		newAsteroid\dy = Rand(1,10)
+		newAsteroid\dx = Rand(-5,5)
+		newAsteroid\dy = Rand(1,7)
 		newAsteroid\image = asteroidImage
 		newAsteroid\health = 100
 		newAsteroid\isSmall = False
@@ -241,7 +258,12 @@ Function updateAsteroids()
 		asteroid\x = asteroid\x + asteroid\dx
 		asteroid\y = asteroid\y + asteroid\dy
 		If(asteroid\x >= 1280 Or asteroid\x <= 0 Or asteroid\y >= 720 Or asteroid\y <= -50) Then
-			Delete asteroid
-		EndIf 		
+			Delete asteroid		
+		ElseIf ImagesOverlap(asteroid\image,asteroid\x,asteroid\y,player\image,player\x,player\y)
+			player\health = player\health - 5 
+			If Not asteroid\isSmall Then spawnSmallAsteroids(asteroid\x,asteroid\y)
+			Delete asteroid 
+			PlaySound asteroidExplosion
+		EndIf 
 	Next
 End Function 
