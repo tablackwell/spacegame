@@ -11,6 +11,7 @@ Global loading = LoadImage("loading.bmp")
 Global backgroundImageClose = LoadImage("stars.bmp")
 Global backgroundImageFar = LoadImage("starsfarther.bmp")
 Global asteroidImage = LoadImage("asteroid.bmp")
+Global asteroidSmallImage = LoadImage("asteroidsmall.bmp")
 Global playerImage = LoadImage("player.bmp")
 Global bulletImage = LoadImage("bullet.bmp")
 Global enemyBulletImage = LoadImage("enemybullet.bmp")
@@ -50,6 +51,7 @@ End Type
 Type asteroid
 	Field x,y,dx,dy,health
 	Field image
+	Field isSmall
 End Type 
 
 ; make our player!
@@ -163,6 +165,12 @@ Function updateBullets()
 			Next
 			For asteroid.asteroid = Each asteroid
 				If ImagesOverlap(bullet\image,bullet\x,bullet\y,asteroid\image,asteroid\x,asteroid\y)
+					If(Not asteroid\isSmall) Then
+						spawnSmallAsteroids(asteroid\x,asteroid\y)
+						spawnSmallAsteroids(asteroid\x,asteroid\y)
+						spawnSmallAsteroids(asteroid\x,asteroid\y)
+						spawnSmallAsteroids(asteroid\x,asteroid\y)
+					EndIf 
 					Delete asteroid
 				EndIf 
 			Next
@@ -205,6 +213,17 @@ Function updateEnemy()
 	Next
 End Function 
 
+Function spawnSmallAsteroids(x,y)
+	asteroid1.asteroid = New asteroid
+	asteroid1\x = x
+	asteroid1\y = y
+	asteroid1\dx = Rand(-10,10)
+	asteroid1\dy = Rand(-10,10)
+	asteroid1\image = asteroidSmallImage
+	asteroid1\isSmall = True 
+End Function
+	
+
 Function updateAsteroids()
 	If MilliSecs() - astTimer >= 5000 Then
 		astTimer = MilliSecs()
@@ -215,12 +234,13 @@ Function updateAsteroids()
 		newAsteroid\dy = Rand(1,10)
 		newAsteroid\image = asteroidImage
 		newAsteroid\health = 100
+		newAsteroid\isSmall = False
 	EndIf 
 	For asteroid.asteroid = Each asteroid
 		DrawImage asteroid\image,asteroid\x,asteroid\y
 		asteroid\x = asteroid\x + asteroid\dx
 		asteroid\y = asteroid\y + asteroid\dy
-		If(asteroid\x >= 1280 Or asteroid\x <= 0 Or asteroid\y >= 720) Then
+		If(asteroid\x >= 1280 Or asteroid\x <= 0 Or asteroid\y >= 720 Or asteroid\y <= -50) Then
 			Delete asteroid
 		EndIf 		
 	Next
