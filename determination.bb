@@ -16,17 +16,24 @@ Global elitesPresent = 0
 
 ;load images and sound
 Global loading = LoadImage("graphics\loading.bmp")
+
 Global backgroundImageClose = LoadImage("graphics\stars.bmp")
 Global backgroundImageFar = LoadImage("graphics\starsfarther.bmp")
+
 Global asteroidImage = LoadImage("graphics\asteroid.bmp")
 Global asteroidSmallImage = LoadImage("graphics\asteroidsmall.bmp")
+
 Global playerImage = LoadImage("graphics\player.bmp")
 Global injuredPlayer = LoadImage("graphics\injuredPlayer.bmp")
 Global nearDeath = LoadImage("graphics\playerNearDeath.bmp")
+
 Global bulletImage = LoadImage("graphics\bullet.bmp")
 Global enemyBulletImage = LoadImage("graphics\enemybullet.bmp")
+Global powerupimage = LoadImage("graphics\powerup.bmp")
+
 Global enemyImage = LoadImage("graphics\enemy.bmp")
 Global enemyElite = LoadImage("graphics\enemyElite.bmp")
+
 Global damageSound = LoadSound("sfx\damage.wav")
 Global playerShoot = LoadSound("sfx\playershoot.wav")
 Global enemyShoot = LoadSound("sfx\enemyshoot.wav")
@@ -49,6 +56,12 @@ Type bullet
 	Field x,y,dy
 	Field image
 	Field invis
+End Type 
+
+Type powerup
+	Field x,y,dx,dy
+	Field image
+	Field mode
 End Type 
 
 Type enemyBullet
@@ -124,6 +137,7 @@ While KeyDown(1)=0
 	updateBullets() ; Check bullet collisions and movement
 	updateEnemyBullets() ; Check enemy bullet collisions and movement
 	updateAsteroids()
+	updatePowerups()
 	checkScore() 
 	Flip
 Wend
@@ -140,22 +154,23 @@ End Function
 
 Function updatePlayer()
 	DrawImage player\image,player\x,player\y
+	If player\health > 250 Then player\image =  playerImage
 	If player\health <= 250 Then player\image = injuredplayer
 	If player\health <= 125 Then player\image = nearDeath
 	If player\health >= 0 Then 
 		;Keyboard controls
 		If KeyDown(LEFTKEY)
-			player\x = player\x - (4 + difficulty)			
+			player\x = player\x - (7 + difficulty)			
 		EndIf
 		If KeyDown(RIGHTKEY)
-			player\x = player\x + (4 + difficulty)
+			player\x = player\x + (7 + difficulty)
 		EndIf
 		
 		If KeyDown(UPKEY)
-			player\y = player\y - (4 + difficulty)
+			player\y = player\y - (5 + difficulty)
 		EndIf
 		If KeyDown(DOWNKEY)
-			player\y = player\y + (4 + difficulty)
+			player\y = player\y + (5 + difficulty)
 		EndIf
 		
 		If KeyHit(SPACEBAR) ;If we shoot, make a new bullet
@@ -282,6 +297,10 @@ Function spawnSmallAsteroids(x,y)
 		asteroid1\image = asteroidSmallImage
 		asteroid1\isSmall = True 
 	Next
+	;roll the dice to see if we spawn a powerup
+	If Rand(1,10) = 10 Then
+		spawnPowerUp(x,y,Rand(0,5),Rand(0,5))
+	EndIf 
 End Function
 	
 Function spawnEnemy(count)
@@ -370,6 +389,32 @@ Function spawnAsteroids(count)
 		newAsteroid\health = 100
 		newAsteroid\isSmall = False
 	Next 
+End Function
+
+Function spawnPowerup(x,y,dx,dy)
+	powerup.powerup = New powerup
+	powerup\image = powerupImage
+	powerup\x = x
+	powerup\y = y
+	powerup\dx = dx
+	powerup\dy = dy
+End Function
+
+Function updatePowerups()
+	For powerup.powerup = Each powerup
+		DrawImage powerup\image,powerup\x,powerup\y
+		powerup\x = powerup\x + powerup\dx
+		powerup\y = powerup\y + powerup\dy
+		If powerup\x <= 0 Or powerup\x >= 1280 Or powerup\y <= 0 Or powerup\y >= 720 Then
+			Delete powerup
+		Else
+			If ImagesOverlap(player\image,player\x,player\y,powerup\image,powerup\x,powerup\y) Then
+				player\health = player\health + 50
+				Delete powerup
+			EndIf 
+		EndIf 
+	Next  
+	
 End Function
 
 Function checkScore()
