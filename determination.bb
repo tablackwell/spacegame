@@ -3,6 +3,7 @@ AppTitle "DETERMINATION"
 Graphics 1280,720,32,1
 AutoMidHandle True ; Basically, images will be placed based on center, not left corner
 SetBuffer BackBuffer() ; a back buffer
+
 SeedRnd = MilliSecs() ; set up our random number generator
 Global timer = MilliSecs() ; make an overall timer
 Global enemyCount = 0 
@@ -162,8 +163,11 @@ Function updatePlayer()
 			bullet\y = player\y
 			PlaySound playerShoot
 		EndIf 
-	EndIf 
-	
+	Else
+		Text 640,360,"GAME OVER"
+		Text 640,460,"Press ESC to quit"
+			
+	End If 
 	; Some other stuff not related to player movement
 	
 	If KeyHit(18) ; Enemy respawn feature for testing
@@ -285,17 +289,13 @@ Function spawnEnemy(count)
 End Function
 
 Function updateAsteroids()
+	; Normal asteroid spawning
 	If MilliSecs() - astTimer >= 2000 Then
 		astTimer = MilliSecs()
-		newAsteroid.asteroid = New Asteroid
-		newAsteroid\x = Rand(0,1230)
-		newAsteroid\y = 0
-		newAsteroid\dx = Rand(-5,5)
-		newAsteroid\dy = Rand(1,7)
-		newAsteroid\image = asteroidImage
-		newAsteroid\health = 100
-		newAsteroid\isSmall = False
+		spawnAsteroids(difficulty)
 	EndIf 
+	
+		
 	For asteroid.asteroid = Each asteroid
 		DrawImage asteroid\image,asteroid\x,asteroid\y
 		asteroid\x = asteroid\x + asteroid\dx
@@ -314,6 +314,19 @@ Function updateAsteroids()
 		EndIf 
 	Next
 End Function 
+
+Function spawnAsteroids(count)
+	For i = 1 To count
+		newAsteroid.asteroid = New Asteroid
+		newAsteroid\x = Rand(0,1230)
+		newAsteroid\y = 0
+		newAsteroid\dx = Rand(-5,5)
+		newAsteroid\dy = Rand(1,7)
+		newAsteroid\image = asteroidImage
+		newAsteroid\health = 100
+		newAsteroid\isSmall = False
+	Next 
+End Function
 
 Function checkScore()
 	If score > 100 And score < 200
