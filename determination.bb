@@ -126,7 +126,7 @@ Function updatePlayer()
 	DrawImage player\image,player\x,player\y
 	If player\health <= 250 Then player\image = injuredplayer
 	If player\health <= 125 Then player\image = nearDeath
-	If player\health <= 0 Then 
+	If player\health >= 0 Then 
 		;Keyboard controls
 		If KeyDown(LEFTKEY)
 			player\x = player\x - 5			
