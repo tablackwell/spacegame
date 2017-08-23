@@ -1,29 +1,30 @@
-Graphics 1280,720,32,1
+
+AppTitle "Project Hiraeth"
+Graphics 1280,720,32,2
 AutoMidHandle True ; Basically, images will be placed based on center, not left corner
 SetBuffer BackBuffer() ; a back buffer
 SeedRnd = MilliSecs() ; set up our random number generator
 Global timer = MilliSecs() ; make an overall timer
 Global enemyCount = 0 
 Global astTimer = MilliSecs()
-
 Global score = 0 
 
 ;load images and sound
-Global loading = LoadImage("loading.bmp")
-Global backgroundImageClose = LoadImage("stars.bmp")
-Global backgroundImageFar = LoadImage("starsfarther.bmp")
-Global asteroidImage = LoadImage("asteroid.bmp")
-Global asteroidSmallImage = LoadImage("asteroidsmall.bmp")
-Global playerImage = LoadImage("player.bmp")
-Global injuredPlayer = LoadImage("injuredPlayer.bmp")
-Global nearDeath = LoadImage("playerNearDeath.bmp")
-Global bulletImage = LoadImage("bullet.bmp")
-Global enemyBulletImage = LoadImage("enemybullet.bmp")
-Global enemyImage = LoadImage("enemy.bmp")
-Global damageSound = LoadSound("damage.wav")
-Global playerShoot = LoadSound("playershoot.wav")
-Global enemyShoot = LoadSound("enemyshoot.wav")
-Global asteroidExplosion = LoadSound("asteroidExplosion.wav")
+Global loading = LoadImage("graphics\loading.bmp")
+Global backgroundImageClose = LoadImage("graphics\stars.bmp")
+Global backgroundImageFar = LoadImage("graphics\starsfarther.bmp")
+Global asteroidImage = LoadImage("graphics\asteroid.bmp")
+Global asteroidSmallImage = LoadImage("graphics\asteroidsmall.bmp")
+Global playerImage = LoadImage("graphics\player.bmp")
+Global injuredPlayer = LoadImage("graphics\injuredPlayer.bmp")
+Global nearDeath = LoadImage("graphics\playerNearDeath.bmp")
+Global bulletImage = LoadImage("graphics\bullet.bmp")
+Global enemyBulletImage = LoadImage("graphics\enemybullet.bmp")
+Global enemyImage = LoadImage("graphics\enemy.bmp")
+Global damageSound = LoadSound("sfx\damage.wav")
+Global playerShoot = LoadSound("sfx\playershoot.wav")
+Global enemyShoot = LoadSound("sfx\enemyshoot.wav")
+Global asteroidExplosion = LoadSound("sfx\asteroidExplosion.wav")
 
 Global soundOff = False 
 
@@ -96,7 +97,7 @@ Global scrolly = 0
 While KeyDown(1)=0
 	Cls
 	If Not ChannelPlaying(music)
-		music = PlayMusic("afterburner.mp3")
+		music = PlayMusic("music\afterburner.mp3")
 	EndIf 
 	updateBackground() ; Parallax stuff
 	Text 200,700,"Time Elapsed: " + Str((MilliSecs() - timer) / 1000)
