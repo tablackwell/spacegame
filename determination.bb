@@ -1,13 +1,16 @@
 
-AppTitle "Project Hiraeth"
-Graphics 1280,720,32,2
+AppTitle "DETERMINATION"
+Graphics 1280,720,32,1
 AutoMidHandle True ; Basically, images will be placed based on center, not left corner
 SetBuffer BackBuffer() ; a back buffer
 SeedRnd = MilliSecs() ; set up our random number generator
 Global timer = MilliSecs() ; make an overall timer
 Global enemyCount = 0 
 Global astTimer = MilliSecs()
+Global scoreTimer = MilliSecs()
+Global enemyTimer = MilliSecs()
 Global score = 0 
+Global difficulty = 1
 
 ;load images and sound
 Global loading = LoadImage("graphics\loading.bmp")
@@ -89,7 +92,6 @@ While KeyDown(28)=0
 	
 	Flip 
 Wend
-
 Global scrolly = 0 
 
 ;main game loop
@@ -104,12 +106,21 @@ While KeyDown(1)=0
 	Text 400,700,"Enemy Count: " + Str(enemyCount)
 	Text 600,700,"Player Health: " + Str(player\health)
 	Text 800,700,"Score: " + Str(score)
+	Text 900,700,"Difficulty: " + Str(difficulty)
+	If (MilliSecs() - scoreTimer) >= 1000 Then
+		score = score + 1 
+		scoreTimer = MilliSecs()
+	EndIf 
+	If (MilliSecs() - enemyTimer) >= (5000 / difficulty) Then
+		enemyTimer = MilliSecs()
+		spawnEnemy(1)
+	EndIf 
 	updateEnemy() ; Enemy movement and shooting
 	updatePlayer() ; Player movement (keyboard) and shooting
 	updateBullets() ; Check bullet collisions and movement
 	updateEnemyBullets() ; Check enemy bullet collisions and movement
 	updateAsteroids()
-	checkScore()
+	checkScore() 
 	Flip
 Wend
 StopChannel music 
@@ -117,7 +128,7 @@ StopChannel music
 Function updateBackground() ; Controls the background
 	TileImage backgroundimageFar,0,scrolly ;Background
 	TileImage backgroundImageClose,0,scrolly*2 ;Foreground, moves faster
-	scrolly = scrolly+1 ; Scroll forward 
+	scrolly = scrolly+difficulty ; Scroll forward 
 	If(scrolly >= ImageHeight(backgroundimageclose)) Then
 		scrolly = 0 ;Reset if needed
 	EndIf
@@ -130,17 +141,17 @@ Function updatePlayer()
 	If player\health >= 0 Then 
 		;Keyboard controls
 		If KeyDown(LEFTKEY)
-			player\x = player\x - 5			
+			player\x = player\x - (4 + difficulty)			
 		EndIf
 		If KeyDown(RIGHTKEY)
-			player\x = player\x + 5
+			player\x = player\x + (4 + difficulty)
 		EndIf
 		
 		If KeyDown(UPKEY)
-			player\y = player\y - 5
+			player\y = player\y - (4 + difficulty)
 		EndIf
 		If KeyDown(DOWNKEY)
-			player\y = player\y + 5
+			player\y = player\y + (4 + difficulty)
 		EndIf
 		
 		If KeyHit(SPACEBAR) ;If we shoot, make a new bullet
@@ -156,15 +167,7 @@ Function updatePlayer()
 	; Some other stuff not related to player movement
 	
 	If KeyHit(18) ; Enemy respawn feature for testing
-		enemy.Enemy = New Enemy 
-		enemy\x = 600
-		enemy\y = 50 
-		enemy\dy = 0 			
-		enemy\dx = 8
-		enemy\isDead = False
-		enemy\image = enemyImage 
-		enemy\bulletTimer = MilliSecs()
-		enemyCount = enemyCount + 1 
+		spawnEnemy(1)
 	EndIf 
 	If KeyHit(25) ; turn sound off/on
 		If soundOff
@@ -258,6 +261,28 @@ Function spawnSmallAsteroids(x,y)
 	Next
 End Function
 	
+Function spawnEnemy(count)
+	For i = 1 To count
+		enemy.Enemy = New Enemy 
+		enemy\x = Rand(0,1230)
+		coinFlip = Rand(0,1)
+		If coinFlip Then
+			enemy\y = 50
+		Else
+			enemy\y = 100 	
+		EndIf 	
+		enemy\dy = 0 			
+		coinFlip2 = Rand(0,1)
+		If coinflip2 Then 
+			enemy\dx = 8
+		Else enemy\dx = -8 
+		EndIf 
+		enemy\isDead = False
+		enemy\image = enemyImage 
+		enemy\bulletTimer = MilliSecs()
+		enemyCount = enemyCount + 1 
+	Next
+End Function
 
 Function updateAsteroids()
 	If MilliSecs() - astTimer >= 2000 Then
@@ -291,4 +316,13 @@ Function updateAsteroids()
 End Function 
 
 Function checkScore()
+	If score > 100 And score < 200
+		difficulty = 2
+	Else If score > 200 And score < 500
+		difficulty = 3
+	Else If score > 500 And score < 1000
+		difficulty = 4
+	Else If score > 1000
+		difficulty = 5 
+	EndIf 
 End Function
