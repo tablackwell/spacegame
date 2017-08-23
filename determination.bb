@@ -12,6 +12,7 @@ Global scoreTimer = MilliSecs()
 Global enemyTimer = MilliSecs()
 Global score = 0 
 Global difficulty = 1
+Global elitesPresent = 0 
 
 ;load images and sound
 Global loading = LoadImage("graphics\loading.bmp")
@@ -25,6 +26,7 @@ Global nearDeath = LoadImage("graphics\playerNearDeath.bmp")
 Global bulletImage = LoadImage("graphics\bullet.bmp")
 Global enemyBulletImage = LoadImage("graphics\enemybullet.bmp")
 Global enemyImage = LoadImage("graphics\enemy.bmp")
+Global enemyElite = LoadImage("graphics\enemyElite.bmp")
 Global damageSound = LoadSound("sfx\damage.wav")
 Global playerShoot = LoadSound("sfx\playershoot.wav")
 Global enemyShoot = LoadSound("sfx\enemyshoot.wav")
@@ -50,7 +52,7 @@ Type bullet
 End Type 
 
 Type enemyBullet
-	Field x,y,dy
+	Field x,y,dy,dx
 	Field image
 End Type 
 
@@ -59,6 +61,7 @@ Type enemy
 	Field image
 	Field isDead
 	Field bulletTimer 
+	Field isElite
 End Type 
 
 Type asteroid
@@ -193,10 +196,15 @@ Function updateBullets()
 		Else If Not bullet\invis
 			For enemy.enemy = Each enemy ; Check for collisions with enemies
 				If ImagesOverlap(bullet\image,bullet\x,bullet\y,enemy\image,enemy\x,enemy\y)
-					Delete enemy
-					enemyCount = enemyCount - 1 
+					enemy\health = enemy\health - 25
+					If enemy\health <= 0 Then 
+						If enemy\isElite = True Then eliteCount = eliteCount - 1 	
+						Delete enemy
+						enemyCount = enemyCount - 1
+					EndIf 	
 					score = score + 25
 					PlaySound damageSound 
+					bullet\invis = True 
 				EndIf 
 			Next
 			For asteroid.asteroid = Each asteroid
@@ -221,6 +229,7 @@ Function updateEnemyBullets()
 	For bullet.enemyBullet = Each enemyBullet ; For ALL enemy bullets
 		DrawImage(bullet\image,bullet\x,bullet\y)
 		bullet\y = bullet\y + bullet\dy
+		bullet\x = bullet\x + bullet\dx
 		If(bullet\y > 900) Then
 			Delete bullet ; Delete if out of bounds
 		Else ; Check for collisions. You'll need to modify this if you want
@@ -246,11 +255,21 @@ Function updateEnemy()
 			bullet\y = enemy\y
 			bullet\dy = 10
 			bullet\image = enemyBulletImage
+			If enemy\isElite Then spawnHomingBullet(enemy\x,enemy\y,0,5)
 			enemy\bulletTimer = MilliSecs() ; reset our timer
 			If(enemyCount < 10) Then PlaySound enemyShoot
 		EndIf 
 	Next
 End Function 
+
+Function spawnHomingBullet(x$,y$,dx$,dy$)
+	bullet2.enemyBullet = New enemyBullet
+	bullet2\x = x
+	bullet2\y = y
+	bullet2\dy = dy
+	bullet2\dx = dx
+	bullet2\image = enemyBulletImage
+End Function
 
 Function spawnSmallAsteroids(x,y)
 	amount = Rand(2,6)
@@ -284,8 +303,33 @@ Function spawnEnemy(count)
 		enemy\isDead = False
 		enemy\image = enemyImage 
 		enemy\bulletTimer = MilliSecs()
+		enemy\health = 25
 		enemyCount = enemyCount + 1 
 	Next
+	If(difficulty >= 2 ) And (Rand(0,10) = 10) And elitesPresent < difficulty Then
+		enemy.Enemy = New Enemy 
+		enemy\x = Rand(0,1230)
+		coinFlip = Rand(0,1)
+		If coinFlip Then
+			enemy\y = 50
+		Else
+			enemy\y = 100 	
+		EndIf 	
+		enemy\dy = 0 			
+		coinFlip2 = Rand(0,1)
+		If coinflip2 Then 
+			enemy\dx = 8
+		Else enemy\dx = -8 
+		EndIf 
+		enemy\isDead = False
+		enemy\image = enemyElite
+		enemy\bulletTimer = MilliSecs()
+		enemyCount = enemyCount + 1 
+		enemy\health = 100
+		enemy\isElite = True
+		elitesPresent = elitesPresent + 1 
+	EndIf 
+
 End Function
 
 Function updateAsteroids()
