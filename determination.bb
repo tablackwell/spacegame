@@ -6,6 +6,8 @@ Global timer = MilliSecs() ; make an overall timer
 Global enemyCount = 0 
 Global astTimer = MilliSecs()
 
+Global score = 0 
+
 ;load images and sound
 Global loading = LoadImage("loading.bmp")
 Global backgroundImageClose = LoadImage("stars.bmp")
@@ -13,6 +15,8 @@ Global backgroundImageFar = LoadImage("starsfarther.bmp")
 Global asteroidImage = LoadImage("asteroid.bmp")
 Global asteroidSmallImage = LoadImage("asteroidsmall.bmp")
 Global playerImage = LoadImage("player.bmp")
+Global injuredPlayer = LoadImage("injuredPlayer.bmp")
+Global nearDeath = LoadImage("playerNearDeath.bmp")
 Global bulletImage = LoadImage("bullet.bmp")
 Global enemyBulletImage = LoadImage("enemybullet.bmp")
 Global enemyImage = LoadImage("enemy.bmp")
@@ -64,7 +68,7 @@ player\x = 600
 player\y = 670
 player\isDead = False
 player\image = playerImage
-player\health = 100
+player\health = 500
 
 ; Make our first enemy
 Global enemy.Enemy = New Enemy 
@@ -98,11 +102,13 @@ While KeyDown(1)=0
 	Text 200,700,"Time Elapsed: " + Str((MilliSecs() - timer) / 1000)
 	Text 400,700,"Enemy Count: " + Str(enemyCount)
 	Text 600,700,"Player Health: " + Str(player\health)
+	Text 800,700,"Score: " + Str(score)
 	updateEnemy() ; Enemy movement and shooting
 	updatePlayer() ; Player movement (keyboard) and shooting
 	updateBullets() ; Check bullet collisions and movement
 	updateEnemyBullets() ; Check enemy bullet collisions and movement
 	updateAsteroids()
+	checkScore()
 	Flip
 Wend
 StopChannel music 
@@ -118,41 +124,47 @@ End Function
 
 Function updatePlayer()
 	DrawImage player\image,player\x,player\y
-	;Keyboard controls
-	If KeyDown(LEFTKEY)
-		player\x = player\x - 5			
-	EndIf
-	If KeyDown(RIGHTKEY)
-		player\x = player\x + 5
-	EndIf
-	
-	If KeyDown(UPKEY)
-		player\y = player\y - 5
-	EndIf
-	If KeyDown(DOWNKEY)
-		player\y = player\y + 5
-	EndIf
-	
-	If KeyHit(SPACEBAR) ;If we shoot, make a new bullet
-		bullet.bullet = New bullet
-		bullet\image = bulletImage
-		bullet\dy = -10
-		bullet\x = player\x
-		bullet\y = player\y
-		PlaySound playerShoot
+	If player\health <= 250 Then player\image = injuredplayer
+	If player\health <= 125 Then player\image = nearDeath
+	If player\health <= 0 Then 
+		;Keyboard controls
+		If KeyDown(LEFTKEY)
+			player\x = player\x - 5			
+		EndIf
+		If KeyDown(RIGHTKEY)
+			player\x = player\x + 5
+		EndIf
+		
+		If KeyDown(UPKEY)
+			player\y = player\y - 5
+		EndIf
+		If KeyDown(DOWNKEY)
+			player\y = player\y + 5
+		EndIf
+		
+		If KeyHit(SPACEBAR) ;If we shoot, make a new bullet
+			bullet.bullet = New bullet
+			bullet\image = bulletImage
+			bullet\dy = -10
+			bullet\x = player\x
+			bullet\y = player\y
+			PlaySound playerShoot
+		EndIf 
 	EndIf 
+	
+	; Some other stuff not related to player movement
+	
 	If KeyHit(18) ; Enemy respawn feature for testing
 		enemy.Enemy = New Enemy 
 		enemy\x = 600
 		enemy\y = 50 
-		enemy\dy = 0 
+		enemy\dy = 0 			
 		enemy\dx = 8
 		enemy\isDead = False
 		enemy\image = enemyImage 
 		enemy\bulletTimer = MilliSecs()
 		enemyCount = enemyCount + 1 
 	EndIf 
-	
 	If KeyHit(25) ; turn sound off/on
 		If soundOff
 			ResumeChannel music 
@@ -175,6 +187,7 @@ Function updateBullets()
 				If ImagesOverlap(bullet\image,bullet\x,bullet\y,enemy\image,enemy\x,enemy\y)
 					Delete enemy
 					enemyCount = enemyCount - 1 
+					score = score + 25
 					PlaySound damageSound 
 				EndIf 
 			Next
@@ -182,6 +195,9 @@ Function updateBullets()
 				If ImagesOverlap(bullet\image,bullet\x,bullet\y,asteroid\image,asteroid\x,asteroid\y)
 					If(Not asteroid\isSmall) Then
 						spawnSmallAsteroids(asteroid\x,asteroid\y)
+						score = score + 5
+					Else
+						score = score + 1 
 					EndIf 
 					Delete asteroid
 					PlaySound asteroidExplosion
@@ -203,6 +219,7 @@ Function updateEnemyBullets()
 			; to have multiple players. 
 			If(ImagesOverlap(bullet\image,bullet\x,bullet\y,player\image,player\x,player\y))
 				PlaySound damageSound
+				player\health = player\health - 10 
 				Delete bullet 
 			EndIf
 		EndIf 
@@ -215,7 +232,7 @@ Function updateEnemy()
 		enemy\x = enemy\x + enemy\dx 
 		enemy\y = enemy\y + enemy\dy ; probably just zero for now
 		If(enemy\x <= 0 Or enemy\x >= 1280) Then enemy\dx = -enemy\dx ; bounce
-		If(MilliSecs() - enemy\bulletTimer >= 2000) Then ; Once every second
+		If(MilliSecs() - enemy\bulletTimer >= 2000) Then ; Once every 2 seconds
 			bullet.enemyBullet = New enemyBullet ; spawn a new bullet, set fields
 			bullet\x = enemy\x
 			bullet\y = enemy\y
@@ -260,10 +277,17 @@ Function updateAsteroids()
 		If(asteroid\x >= 1280 Or asteroid\x <= 0 Or asteroid\y >= 720 Or asteroid\y <= -50) Then
 			Delete asteroid		
 		ElseIf ImagesOverlap(asteroid\image,asteroid\x,asteroid\y,player\image,player\x,player\y)
-			player\health = player\health - 5 
-			If Not asteroid\isSmall Then spawnSmallAsteroids(asteroid\x,asteroid\y)
+			If Not asteroid\isSmall Then 
+				spawnSmallAsteroids(asteroid\x,asteroid\y)
+				player\health = player\health - 20
+			Else 
+				player\health = player\health - 5 
+			EndIf 
 			Delete asteroid 
 			PlaySound asteroidExplosion
 		EndIf 
 	Next
 End Function 
+
+Function checkScore()
+End Function
