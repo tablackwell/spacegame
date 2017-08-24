@@ -47,6 +47,7 @@ Function applyPowerup(mode)
 	If mode = 1 Then
 		player\health = player\health + 50 
 	; The following are placeholders
+		PlaySound powerupHealthSound
 	ElseIf mode = 2 Then
 		player\health = player\health + 50
 		boostShoot()
@@ -56,6 +57,7 @@ Function applyPowerup(mode)
 	ElseIf mode = 4 Then
 		player\health = player\health + 50 
 		boostShield()
+		PlaySound powerupShieldSound
 	EndIf 
 End Function
 

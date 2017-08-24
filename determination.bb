@@ -56,6 +56,9 @@ Global enemyShoot = LoadSound("sfx\enemyshoot.wav")
 SoundVolume enemyShoot,.5
 Global asteroidExplosion = LoadSound("sfx\asteroidExplosion.wav")
 SoundVolume asteroidExplosion,.5
+Global powerupHealthSound = LoadSound("sfx\powerupHealth.wav")
+SoundVolume powerupSound,.5
+Global powerupShieldSound = LoadSound("sfx\powerupShield.wav")
 
 Global soundOff = False 
 Global scrolly = 0 ;For parallax 
