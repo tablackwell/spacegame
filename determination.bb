@@ -14,6 +14,11 @@ Global score = 0
 Global difficulty = 1
 Global elitesPresent = 0 
 
+;powerup variables
+Global powerupTimer = MilliSecs()
+Global powerupActive$ = "none"
+Global speedBoost = 0 
+
 ;load images and sound
 Global loading = LoadImage("graphics\loading.bmp")
 
@@ -26,10 +31,15 @@ Global asteroidSmallImage = LoadImage("graphics\asteroidsmall.bmp")
 Global playerImage = LoadImage("graphics\player.bmp")
 Global injuredPlayer = LoadImage("graphics\injuredPlayer.bmp")
 Global nearDeath = LoadImage("graphics\playerNearDeath.bmp")
+Global playerShielded = LoadImage("graphics\playerShielded.bmp")
 
 Global bulletImage = LoadImage("graphics\bullet.bmp")
 Global enemyBulletImage = LoadImage("graphics\enemybullet.bmp")
-Global powerupimage = LoadImage("graphics\powerup.bmp")
+
+Global powerupHealth = LoadImage("graphics\powerupHealth.bmp")
+Global powerupShoot = LoadImage("graphics\powerupShoot.bmp")
+Global powerupSpeed = LoadImage("graphics\powerupSpeed.bmp")
+Global powerupShield = LoadImage("graphics\powerupShield.bmp")
 
 Global enemyImage = LoadImage("graphics\enemy.bmp")
 Global enemyElite = LoadImage("graphics\enemyElite.bmp")
@@ -124,6 +134,7 @@ While KeyDown(1)=0
 	Text 600,700,"Player Health: " + Str(player\health)
 	Text 800,700,"Score: " + Str(score)
 	Text 900,700,"Difficulty: " + Str(difficulty)
+	Text 1100,700,powerupActive$
 	If (MilliSecs() - scoreTimer) >= 1000 Then
 		score = score + 1 
 		scoreTimer = MilliSecs()
@@ -154,32 +165,62 @@ End Function
 
 Function updatePlayer()
 	DrawImage player\image,player\x,player\y
-	If player\health > 250 Then player\image =  playerImage
-	If player\health <= 250 Then player\image = injuredplayer
-	If player\health <= 125 Then player\image = nearDeath
+	
+	If powerUpActive = "boostSpeed" Then 
+		speedBoost = 4
+	EndIf 
+	If MilliSecs() - powerUpTimer >= 10000 Then
+		powerUpActive = "none"
+		speedBoost = 0 
+	EndIf 
+	
+	If (MilliSecs() - powerUpTimer >= 5000) And powerUpActive = "boostShoot"
+		powerupActive = "none"
+	EndIf 
+	
+	If powerupActive = "boostShield" Then
+		player\image = playershielded
+	Else If player\health > 250 Then 
+		player\image =  playerImage
+	Else If player\health <= 250 Then
+		 player\image = injuredplayer
+	Else If player\health <= 125 Then 
+		player\image = nearDeath
+	EndIf 
 	If player\health >= 0 Then 
 		;Keyboard controls
 		If KeyDown(LEFTKEY)
-			player\x = player\x - (7 + difficulty)			
+			player\x = player\x - (7 + difficulty + speedBoost)		
 		EndIf
 		If KeyDown(RIGHTKEY)
-			player\x = player\x + (7 + difficulty)
+			player\x = player\x + (7 + difficulty + speedBoost)
 		EndIf
 		
 		If KeyDown(UPKEY)
-			player\y = player\y - (5 + difficulty)
+			player\y = player\y - (5 + difficulty + speedBoost)
 		EndIf
 		If KeyDown(DOWNKEY)
-			player\y = player\y + (5 + difficulty)
+			player\y = player\y + (5 + difficulty + speedBoost)
 		EndIf
 		
-		If KeyHit(SPACEBAR) ;If we shoot, make a new bullet
-			bullet.bullet = New bullet
-			bullet\image = bulletImage
-			bullet\dy = -10
-			bullet\x = player\x
-			bullet\y = player\y
-			PlaySound playerShoot
+		If Not (powerupactive = "boostShoot")
+			If KeyHit (SPACEBAR) ;If we shoot, make a new bullet
+				bullet.bullet = New bullet
+				bullet\image = bulletImage
+				bullet\dy = -10
+				bullet\x = player\x
+				bullet\y = player\y
+				PlaySound playerShoot
+			EndIf 
+		Else
+			If KeyDown(SPACEBAR) ;If we shoot, make a new bullet
+				bullet.bullet = New bullet
+				bullet\image = bulletImage
+				bullet\dy = -10
+				bullet\x = player\x
+				bullet\y = player\y
+				;PlaySound playerShoot commented out because ears
+			EndIf 
 		EndIf 
 	Else
 		Text 640,360,"GAME OVER"
@@ -251,7 +292,9 @@ Function updateEnemyBullets()
 			; to have multiple players. 
 			If(ImagesOverlap(bullet\image,bullet\x,bullet\y,player\image,player\x,player\y))
 				PlaySound damageSound
-				player\health = player\health - 10 
+				If Not powerupactive = "boostShield"
+					player\health = player\health - 10 
+				EndIf 
 				Delete bullet 
 			EndIf
 		EndIf 
@@ -366,11 +409,16 @@ Function updateAsteroids()
 		If(asteroid\x >= 1280 Or asteroid\x <= 0 Or asteroid\y >= 720 Or asteroid\y <= -50) Then
 			Delete asteroid		
 		ElseIf ImagesOverlap(asteroid\image,asteroid\x,asteroid\y,player\image,player\x,player\y)
+			
 			If Not asteroid\isSmall Then 
 				spawnSmallAsteroids(asteroid\x,asteroid\y)
-				player\health = player\health - 20
+				If Not powerupactive = "boostShield" Then
+					player\health = player\health - 20
+				EndIf 
 			Else 
-				player\health = player\health - 5 
+				If Not powerupactive = "boostShield" Then
+					player\health = player\health - 5 
+				EndIf 
 			EndIf 
 			Delete asteroid 
 			PlaySound asteroidExplosion
@@ -392,15 +440,27 @@ Function spawnAsteroids(count)
 End Function
 
 Function spawnPowerup(x,y,dx,dy)
+	SeedRnd = MilliSecs()
 	powerup.powerup = New powerup
-	powerup\image = powerupImage
 	powerup\x = x
 	powerup\y = y
 	powerup\dx = dx
 	powerup\dy = dy
+	powerup\mode = Rand(1,4)
+	If powerup\mode = 1 Then
+		powerup\image = powerupHealth
+	ElseIf powerup\mode = 2 Then
+		powerup\image = powerupShoot
+	ElseIf powerup\mode = 3 Then
+		powerup\image = powerupSpeed
+	ElseIf powerup\mode = 4 Then
+		powerup\image = powerupShield
+	EndIf 
 End Function
 
 Function updatePowerups()
+	
+
 	For powerup.powerup = Each powerup
 		DrawImage powerup\image,powerup\x,powerup\y
 		powerup\x = powerup\x + powerup\dx
@@ -409,12 +469,44 @@ Function updatePowerups()
 			Delete powerup
 		Else
 			If ImagesOverlap(player\image,player\x,player\y,powerup\image,powerup\x,powerup\y) Then
-				player\health = player\health + 50
+				applyPowerup(powerup\mode)
 				Delete powerup
 			EndIf 
 		EndIf 
 	Next  
 	
+End Function
+
+Function applyPowerup(mode)
+	
+	If mode = 1 Then
+		player\health = player\health + 50 
+	; The following are placeholders
+	ElseIf mode = 2 Then
+		player\health = player\health + 50
+		boostShoot()
+	ElseIf mode = 3 Then
+		player\health = player\health + 50 
+		boostSpeed()
+	ElseIf mode = 4 Then
+		player\health = player\health + 50 
+		boostShield()
+	EndIf 
+End Function
+
+Function boostShoot()
+	powerupactive = "boostShoot" ; change the mode 
+	powerupTimer = MilliSecs() ;start the timer
+End Function
+
+Function boostSpeed()
+	powerUpActive = "boostSpeed"
+	powerupTimer = MilliSecs()
+End Function
+
+Function boostShield()
+	powerupActive = "boostShield"
+	powerupTimer = MilliSecs()
 End Function
 
 Function checkScore()
