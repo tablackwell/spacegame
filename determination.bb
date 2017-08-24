@@ -170,7 +170,7 @@ Function updatePlayer()
 		player\image = playershielded
 	Else If player\health > 250 Then 
 		player\image =  playerImage
-	Else If player\health <= 250 Then
+	Else If player\health <= 250 And player\health > 125 Then
 		 player\image = injuredplayer
 	Else If player\health <= 125 Then 
 		player\image = nearDeath
@@ -198,9 +198,8 @@ Function updatePlayer()
 				bullet\image = bulletImage
 				bullet\dy = -10
 				bullet\x = player\x
-				bullet\y = player\y
+				bullet\y = player\y					
 				PlaySound playerShoot
-
 			EndIf 
 		Else
 			If KeyDown(SPACEBAR) ;If we shoot, make a new bullet
@@ -209,6 +208,7 @@ Function updatePlayer()
 				bullet\dy = -10
 				bullet\x = player\x
 				bullet\y = player\y
+				
 				;PlaySound playerShoot commented out because ears
 			EndIf 
 		EndIf 
