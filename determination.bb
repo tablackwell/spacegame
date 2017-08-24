@@ -49,14 +49,19 @@ Global enemyImage = LoadImage("graphics\enemy.bmp")
 Global enemyElite = LoadImage("graphics\enemyElite.bmp")
 
 Global damageSound = LoadSound("sfx\damage.wav")
+SoundVolume damagesound,.5
 Global playerShoot = LoadSound("sfx\playershoot.wav")
+SoundVolume playerShoot,.5
 Global enemyShoot = LoadSound("sfx\enemyshoot.wav")
+SoundVolume enemyShoot,.5
 Global asteroidExplosion = LoadSound("sfx\asteroidExplosion.wav")
+SoundVolume asteroidExplosion,.5
 
 Global soundOff = False 
+Global scrolly = 0 ;For parallax 
 
-;establish our constants for controls
-Const ESCKEY = 1, UPKEY = 200, LEFTKEY = 203, RIGHTKEY = 205, DOWNKEY = 208, SPACEBAR = 57
+;establish our constants for controls. Now WASD instead because its nicer
+Const ESCKEY = 1, UPKEY = 17, LEFTKEY = 30, RIGHTKEY = 32, DOWNKEY = 31, SPACEBAR = 57
 
 
 ; types
@@ -95,33 +100,23 @@ enemyCount = enemyCount + 1
 While KeyDown(28)=0
 	DrawImage loading,640,450
 	If (KeyHit(1)) Then End 
-	
 	Flip 
 Wend
-Global scrolly = 0 
+
 
 ;main game loop
-.mainLoop
 While KeyDown(1)=0
-	Cls
+	
+	;Music 
 	If Not ChannelPlaying(music)
 		music = PlayMusic("music\afterburner.mp3")
 	EndIf 
-	updateBackground() ; Parallax stuff
-	Text 200,700,"Time Elapsed: " + Str((MilliSecs() - timer) / 1000)
-	Text 400,700,"Enemy Count: " + Str(enemyCount)
-	Text 600,700,"Player Health: " + Str(player\health)
-	Text 800,700,"Score: " + Str(score)
-	Text 900,700,"Difficulty: " + Str(difficulty)
-	Text 1100,700,powerupActive$
-	If (MilliSecs() - scoreTimer) >= 1000 Then
-		score = score + 1 
-		scoreTimer = MilliSecs()
-	EndIf 
-	If (MilliSecs() - enemyTimer) >= (5000 / difficulty) Then
-		enemyTimer = MilliSecs()
-		spawnEnemy(1)
-	EndIf 
+	
+	;Graphics and text
+	updateBackground()
+	dispInfo() 
+	
+	;Game logic function calls 
 	updateEnemy() ; Enemy movement and shooting
 	updatePlayer() ; Player movement (keyboard) and shooting
 	updateBullets() ; Check bullet collisions and movement
@@ -129,14 +124,25 @@ While KeyDown(1)=0
 	updateAsteroids()
 	updatePowerups()
 	checkScore() 
+	
 	Flip
 Wend
-StopChannel music 
 
-Function updateBackground() ; Controls the background
+; Shows info on the screen related to the game (some of it is debug)
+Function dispInfo() 
+	Text 200,700,"Time Elapsed: " + Str((MilliSecs() - timer) / 1000)
+	Text 400,700,"Enemy Count: " + Str(enemyCount)
+	Text 600,700,"Player Health: " + Str(player\health)
+	Text 800,700,"Score: " + Str(score)
+	Text 900,700,"Difficulty: " + Str(difficulty)
+	Text 1100,700,powerupActive$ ; Debug, remove for final version
+End Function
+
+; Enables a scrolling background (yay parallax)
+Function updateBackground() ; 
 	TileImage backgroundimageFar,0,scrolly ;Background
 	TileImage backgroundImageClose,0,scrolly*2 ;Foreground, moves faster
-	scrolly = scrolly+difficulty ; Scroll forward 
+	scrolly = scrolly+difficulty ; Scroll forward - Increases speed by difficulty!
 	If(scrolly >= ImageHeight(backgroundimageclose)) Then
 		scrolly = 0 ;Reset if needed
 	EndIf
@@ -166,7 +172,8 @@ Function updatePlayer()
 	Else If player\health <= 125 Then 
 		player\image = nearDeath
 	EndIf 
-	If player\health >= 0 Then 
+	
+	If player\health >= 0 Then ; Only if the player is still alive
 		;Keyboard controls
 		If KeyDown(LEFTKEY)
 			player\x = player\x - (7 + difficulty + speedBoost)		
@@ -190,6 +197,7 @@ Function updatePlayer()
 				bullet\x = player\x
 				bullet\y = player\y
 				PlaySound playerShoot
+
 			EndIf 
 		Else
 			If KeyDown(SPACEBAR) ;If we shoot, make a new bullet
@@ -201,13 +209,14 @@ Function updatePlayer()
 				;PlaySound playerShoot commented out because ears
 			EndIf 
 		EndIf 
-	Else
-		Text 640,360,"GAME OVER"
-		Text 640,460,"Press ESC to quit"
-			
-	End If 
-	; Some other stuff not related to player movement
 	
+	Else ; The player is dead, so its game over
+		Text 640,360,"GAME OVER"
+		Text 640,460,"Press ESC to quit"	
+	End If 
+	
+	
+	; Some other stuff not related to player movement
 	If KeyHit(18) ; Enemy respawn feature for testing
 		spawnEnemy(1)
 	EndIf 
@@ -241,7 +250,7 @@ Function updateBullets()
 						enemyCount = enemyCount - 1
 					EndIf 	
 					score = score + 25
-					PlaySound damageSound 
+					PlaySound damageSound
 					bullet\invis = True 
 				EndIf 
 			Next
@@ -265,6 +274,14 @@ End Function
 
 
 Function checkScore()
+	If (MilliSecs() - scoreTimer) >= 1000 Then
+		score = score + 1 
+		scoreTimer = MilliSecs()
+	EndIf 
+	If (MilliSecs() - enemyTimer) >= (5000 / difficulty) Then
+		enemyTimer = MilliSecs()
+		spawnEnemy(1)
+	EndIf 
 	If score > 100 And score < 200
 		difficulty = 2
 	Else If score > 200 And score < 500
@@ -275,3 +292,7 @@ Function checkScore()
 		difficulty = 5 
 	EndIf 
 End Function
+
+
+StopChannel music 
+End 
