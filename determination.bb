@@ -254,7 +254,10 @@ Function updateBullets()
 				If ImagesOverlap(bullet\image,bullet\x,bullet\y,enemy\image,enemy\x,enemy\y)
 					enemy\health = enemy\health - 25
 					If enemy\health <= 0 Then 
-						If enemy\isElite = True Then eliteCount = eliteCount - 1 	
+						If enemy\isElite = True Then
+					 		eliteCount = eliteCount - 1 	
+							spawnPowerup(enemy\x,enemy\y,0,5)
+						EndIf 
 						Delete enemy
 						enemyCount = enemyCount - 1
 					EndIf 	
