@@ -25,7 +25,7 @@ Global speedBoost = 0
 ;load images and sound
 Global loading = LoadImage("graphics\loading.bmp")
 
-Global backgroundImageClose = LoadImage("graphics\stars.bmp")
+Global backgroundImageClose = LoadImage("graphics\stars.bmp")  
 Global backgroundImageFar = LoadImage("graphics\starsfarther.bmp")
 
 
@@ -55,16 +55,16 @@ SoundVolume playerShoot,.5
 Global enemyShoot = LoadSound("sfx\enemyshoot.wav")
 SoundVolume enemyShoot,.5
 Global asteroidExplosion = LoadSound("sfx\asteroidExplosion.wav")
-SoundVolume asteroidExplosion,.5
 Global powerupHealthSound = LoadSound("sfx\powerupHealth.wav")
-SoundVolume powerupSound,.5
 Global powerupShieldSound = LoadSound("sfx\powerupShield.wav")
+Global powerupShootSound = LoadSound("sfx\powerupShoot.wav")
+Global powerupSpeedSound = LoadSound("sfx\powerupSpeed.wav")
 
 Global soundOff = False 
 Global scrolly = 0 ;For parallax 
 
 ;establish our constants for controls. Now WASD instead because its nicer
-Const ESCKEY = 1, UPKEY = 17, LEFTKEY = 30, RIGHTKEY = 32, DOWNKEY = 31, SPACEBAR = 57
+Const ESCKEY = 1, UPKEY = 17, LEFTKEY = 30, RIGHTKEY = 32, DOWNKEY = 31, SPACEBAR = 28
 
 
 ; types
@@ -291,9 +291,11 @@ Function checkScore()
 		difficulty = 3
 	Else If score > 500 And score < 1000
 		difficulty = 4
-	Else If score > 1000
+	Else If score > 1000 And score < 2000
 		difficulty = 5 
-	EndIf 
+	Else If score > 2000 
+		difficulty = 6
+	EndIf 	
 End Function
 
 

@@ -51,9 +51,11 @@ Function applyPowerup(mode)
 	ElseIf mode = 2 Then
 		player\health = player\health + 50
 		boostShoot()
+		PlaySound powerupShootSound
 	ElseIf mode = 3 Then
 		player\health = player\health + 50 
 		boostSpeed()
+		PlaySound powerupSpeedSound
 	ElseIf mode = 4 Then
 		player\health = player\health + 50 
 		boostShield()
