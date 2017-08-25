@@ -1,6 +1,7 @@
 Include "enemies.bb"
 Include "asteroids.bb"
 Include "powerups.bb"
+Include "firstBoss.bb"
 
 AppTitle "DETERMINATION"
 Graphics 1280,720,32,1
@@ -13,9 +14,13 @@ Global enemyCount = 0
 Global astTimer = MilliSecs()
 Global scoreTimer = MilliSecs()
 Global enemyTimer = MilliSecs()
+Global bossTimer = MilliSecs()
+
+;Some gameplay logic code
 Global score = 0 
 Global difficulty = 1
 Global elitesPresent = 0 
+Global bossPresent = 0 
 
 ;powerup variables
 Global powerupTimer = MilliSecs()
@@ -106,10 +111,9 @@ While KeyDown(28)=0
 	Flip 
 Wend
 
-
+.main
 ;main game loop
-While KeyDown(1)=0
-	
+While KeyDown(1)=0 	
 	;Music 
 	If Not ChannelPlaying(music)
 		music = PlayMusic("music\afterburner.mp3")
@@ -120,16 +124,40 @@ While KeyDown(1)=0
 	dispInfo() 
 	
 	;Game logic function calls 
-	updateEnemy() ; Enemy movement and shooting
-	updatePlayer() ; Player movement (keyboard) and shooting
-	updateBullets() ; Check bullet collisions and movement
-	updateEnemyBullets() ; Check enemy bullet collisions and movement
-	updateAsteroids()
-	updatePowerups()
-	checkScore() 
-	
+	If bossPresent = 0 
+		updateEnemy() ; Enemy movement and shooting
+		updatePlayer() ; Player movement (keyboard) and shooting
+		updateBullets() ; Check bullet collisions and movement
+		updateEnemyBullets() ; Check enemy bullet collisions and movement
+		updateAsteroids()
+		updatePowerups()
+		checkScore() 
+		
+		
+	ElseIf bossPresent = 1 ; First boss
+		updateBoss()
+		StopChannel music 
+		If Not ChannelPlaying(bossMusic)
+			bossMusic = PlayMusic("music\terminal.mp3")
+		EndIf 
+		
+		If (MilliSecs() - bossTimer ) >= 25000 Then
+			difficulty = 5
+		Else 
+			Text 600,360,"BOSS BATTLE START: " + Str( 25 - (MilliSecs() - bossTimer) / 1000)
+			difficulty = 1 
+		EndIf 
+		
+		updatePlayer()
+		updateBullets()
+		
+	EndIf 
 	Flip
 Wend
+
+
+
+
 
 ; Shows info on the screen related to the game (some of it is debug)
 Function dispInfo() 
@@ -137,7 +165,10 @@ Function dispInfo()
 	Text 400,700,"Enemy Count: " + Str(enemyCount)
 	Text 600,700,"Player Health: " + Str(player\health)
 	Text 800,700,"Score: " + Str(score)
-	Text 900,700,"Difficulty: " + Str(difficulty)
+	If bossPresent = 0 Then 
+		Text 900,700,"Difficulty: " + Str(difficulty)
+	Else Text 900,700,"BOSS BATTLE"
+	EndIf 
 	Text 1100,700,powerupActive$ ; Debug, remove for final version
 End Function
 
@@ -193,7 +224,7 @@ Function updatePlayer()
 		EndIf
 		
 		If Not (powerupactive = "boostShoot")
-			If KeyHit (SPACEBAR) ;If we shoot, make a new bullet
+			If KeyHit(SPACEBAR) ;If we shoot, make a new bullet
 				bullet.bullet = New bullet
 				bullet\image = bulletImage
 				bullet\dy = -10
@@ -285,19 +316,51 @@ Function checkScore()
 		enemyTimer = MilliSecs()
 		spawnEnemy(1)
 	EndIf 
-	If score > 100 And score < 200
+	If score > 100 And score < 200 Then
 		difficulty = 2
-	Else If score > 200 And score < 500
+	Else If score > 200 And score < 500 Then
 		difficulty = 3
-	Else If score > 500 And score < 1000
+	Else If score >= 500 And score < 1000 Then
 		difficulty = 4
-	Else If score > 1000 And score < 2000
+	Else If score > 1000 And score < 2000 Then
 		difficulty = 5 
-	Else If score > 2000 
+	Else If score >= 2000 And score < 3000 Then
 		difficulty = 6
-	EndIf 	
+	Else If score >= 3000 And score < 5000 Then
+		difficulty = 7
+	Else If score >= 5000 Then
+		bossTimer = MilliSecs()
+		bossPresent = 1
+		wipeEntities()
+		difficulty = 1
+		player\x = 600
+		player\y = 670
+		player\health = 500
+	EndIf 
 End Function
 
+Function triggerBoss()
+	bossPresent = 1
+	difficulty = 1
+End Function
+
+Function wipeEntities()
+	For bullet.bullet = Each bullet
+		Delete bullet
+	Next
+	For enemy.enemy = Each enemy
+		Delete enemy
+	Next
+	For asteroid.asteroid = Each asteroid
+		Delete asteroid
+	Next
+	For enemybullet.enemybullet = Each enemybullet
+		Delete enemybullet
+	Next
+	For powerup.powerup = Each powerup
+		Delete powerup
+	Next
+End Function
 
 StopChannel music 
 End 
