@@ -3,3 +3,5 @@ A small, super simple space shooter style game created to teach BlitzBasic to 7t
 
 
 Shoutout to e, r, and j for being super cool students
+
+Additional note: The code probably has a lot of inane and obvious comments, since I used this code to teach. There are also likely much smarter ways of implementing a lot of this stuff, but I wanted to keep it simple for my students. 
